@@ -13,6 +13,8 @@ public final class PerformanceManager {
     private final OptimizerController optimizerController;
     private final AdaptiveResolutionManager adaptiveResolutionManager;
     private final StutterController stutterController;
+    private final RefreshRateProfileManager refreshRateProfileManager;
+    private final MobilePerformanceManager mobilePerformanceManager;
 
     private PerformanceManager() {
 
@@ -33,6 +35,12 @@ public final class PerformanceManager {
 
         stutterController =
                 new StutterController();
+
+        refreshRateProfileManager =
+                new RefreshRateProfileManager();
+
+        mobilePerformanceManager =
+                new MobilePerformanceManager();
     }
 
     public static PerformanceManager getInstance() {
@@ -49,19 +57,27 @@ public final class PerformanceManager {
         double averageFrameTime =
                 frameTimeMonitor.getAverageFrameTime();
 
+        double targetFrameTime =
+                optimizerController.getTargetFrameTime();
+
+        double currentScale =
+                adaptiveResolutionManager
+                        .getResolutionScale();
+
         stutterController.update(
                 currentFrameTime,
                 averageFrameTime
         );
 
-        /*
-         * При серьёзном Frame Time spike
-         * Adaptive Resolution получает возможность
-         * быстрее реагировать.
-         */
         adaptiveResolutionManager.update(
                 currentFrameTime,
-                optimizerController.getTargetFrameTime()
+                targetFrameTime
+        );
+
+        mobilePerformanceManager.update(
+                currentFrameTime,
+                targetFrameTime,
+                currentScale
         );
     }
 
@@ -83,6 +99,14 @@ public final class PerformanceManager {
 
     public StutterController getStutterController() {
         return stutterController;
+    }
+
+    public RefreshRateProfileManager getRefreshRateProfileManager() {
+        return refreshRateProfileManager;
+    }
+
+    public MobilePerformanceManager getMobilePerformanceManager() {
+        return mobilePerformanceManager;
     }
 
     public double getCurrentFrameTime() {
@@ -117,6 +141,21 @@ public final class PerformanceManager {
                 .getResolutionScale();
     }
 
+    public double getMobileRecommendedScale() {
+        return mobilePerformanceManager
+                .getRecommendedScale();
+    }
+
+    public String getMobileModeText() {
+        return mobilePerformanceManager
+                .getModeText();
+    }
+
+    public String getMobileScaleText() {
+        return mobilePerformanceManager
+                .getScaleText();
+    }
+
     public String getStatusText() {
         return optimizerController
                 .getStatusText();
@@ -125,6 +164,11 @@ public final class PerformanceManager {
     public boolean isOptimizationEnabled() {
         return optimizerController
                 .isOptimizationEnabled();
+    }
+
+    public boolean isMobileOptimizationEnabled() {
+        return mobilePerformanceManager
+                .isEnabled();
     }
 
     public void setOptimizationEnabled(
@@ -137,13 +181,38 @@ public final class PerformanceManager {
         adaptiveResolutionManager
                 .setEnabled(enabled);
 
+        mobilePerformanceManager
+                .setEnabled(enabled);
+
         if (!enabled) {
             adaptiveResolutionManager.reset();
+            mobilePerformanceManager.reset();
         }
+    }
+
+    public void setMobileOptimizationEnabled(
+            boolean enabled
+    ) {
+
+        mobilePerformanceManager
+                .setEnabled(enabled);
+
+        if (!enabled) {
+            mobilePerformanceManager.reset();
+        }
+    }
+
+    public void setMobilePerformanceMode(
+            MobilePerformanceManager.Mode mode
+    ) {
+
+        mobilePerformanceManager
+                .setMode(mode);
     }
 
     public void resetAdaptiveResolution() {
 
         adaptiveResolutionManager.reset();
+        mobilePerformanceManager.reset();
     }
 }
