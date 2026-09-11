@@ -14,11 +14,14 @@ public final class AdaptiveResolutionManager {
     private static final double REDUCE_THRESHOLD = 1.10;
     private static final double INCREASE_THRESHOLD = 0.90;
 
+    private static final int RECOVERY_DELAY = 3;
+
     private double resolutionScale = DEFAULT_SCALE;
 
     private boolean enabled = true;
 
     private int decisionTimer = 0;
+    private int recoveryCounter = 0;
 
     public void update(
             double currentFrameTime,
@@ -34,38 +37,55 @@ public final class AdaptiveResolutionManager {
 
         decisionTimer++;
 
-        /*
-         * Не меняем разрешение каждый кадр.
-         * Иначе масштаб будет постоянно дёргаться.
-         */
         if (decisionTimer < DECISION_INTERVAL) {
             return;
         }
 
         decisionTimer = 0;
 
-        double frameTimeRatio =
+        double ratio =
                 currentFrameTime / targetFrameTime;
 
         /*
-         * Frame Time слишком большой —
-         * постепенно уменьшаем масштаб.
+         * Производительность плохая:
+         * быстрее реагируем снижением качества.
          */
-        if (frameTimeRatio > REDUCE_THRESHOLD) {
+        if (ratio > REDUCE_THRESHOLD) {
+
+            recoveryCounter = 0;
+
             decreaseScale();
+
             return;
         }
 
         /*
-         * Frame Time достаточно хороший —
-         * можем попробовать вернуть качество.
+         * Производительность хорошая.
+         *
+         * Не повышаем качество сразу после одного
+         * удачного измерения — ждём несколько циклов.
          */
-        if (frameTimeRatio < INCREASE_THRESHOLD) {
-            increaseScale();
+        if (ratio < INCREASE_THRESHOLD) {
+
+            recoveryCounter++;
+
+            if (recoveryCounter >= RECOVERY_DELAY) {
+                recoveryCounter = 0;
+
+                increaseScale();
+            }
+
+            return;
         }
+
+        /*
+         * Мы находимся в нормальной зоне.
+         */
+        recoveryCounter = 0;
     }
 
     private void decreaseScale() {
+
         resolutionScale -= SCALE_STEP;
 
         if (resolutionScale < MIN_SCALE) {
@@ -74,6 +94,7 @@ public final class AdaptiveResolutionManager {
     }
 
     private void increaseScale() {
+
         resolutionScale += SCALE_STEP;
 
         if (resolutionScale > MAX_SCALE) {
@@ -94,8 +115,11 @@ public final class AdaptiveResolutionManager {
     }
 
     public void reset() {
+
         resolutionScale = DEFAULT_SCALE;
+
         decisionTimer = 0;
+        recoveryCounter = 0;
     }
 
     public boolean isAtMinimum() {
@@ -107,6 +131,7 @@ public final class AdaptiveResolutionManager {
     }
 
     public String getScaleText() {
+
         return String.format(
                 "%.0f%%",
                 resolutionScale * 100.0
