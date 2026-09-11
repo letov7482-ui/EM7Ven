@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "e7venoptimizer",
+  "version": "${version}",
+  "name": "E7ven FrameTime Optimizer",
+  "description": "Adaptive frame-time optimization for Minecraft.",
+  "authors": [
+    "E7ven"
+  ],
+  "license": "MIT",
+  "icon": "assets/e7venoptimizer/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "com.e7ven.optimizer.E7venOptimizer"
+    ],
+    "client": [
+      "com.e7ven.optimizer.client.E7venOptimizerClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.2",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
