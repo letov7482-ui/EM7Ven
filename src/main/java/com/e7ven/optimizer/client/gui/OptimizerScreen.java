@@ -6,15 +6,19 @@ import com.e7ven.optimizer.performance.MobilePerformanceManager;
 import com.e7ven.optimizer.performance.PerformanceManager;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
 public final class OptimizerScreen extends Screen {
 
     private static final int PANEL_WIDTH = 460;
-    private static final int PANEL_HEIGHT = 300;
+    private static final int PANEL_HEIGHT = 330;
 
     private final PerformanceManager performanceManager;
     private final FrameTimeMonitor frameTimeMonitor;
+
+    private ButtonWidget mobileButton;
+    private ButtonWidget modeButton;
 
     public OptimizerScreen() {
         super(Text.literal("E7ven FrameTime Optimizer"));
@@ -29,6 +33,146 @@ public final class OptimizerScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+
+        int left =
+                (width - PANEL_WIDTH) / 2;
+
+        int top =
+                (height - PANEL_HEIGHT) / 2;
+
+        /*
+         * Mobile ON/OFF
+         */
+
+        mobileButton = ButtonWidget.builder(
+                getMobileButtonText(),
+                button -> toggleMobileOptimization()
+        ).dimensions(
+                left + 16,
+                top + 194,
+                130,
+                20
+        ).build();
+
+        addDrawableChild(mobileButton);
+
+        /*
+         * Mobile Mode
+         */
+
+        modeButton = ButtonWidget.builder(
+                getModeButtonText(),
+                button -> toggleMobileMode()
+        ).dimensions(
+                left + 156,
+                top + 194,
+                130,
+                20
+        ).build();
+
+        addDrawableChild(modeButton);
+
+        /*
+         * Reset
+         */
+
+        ButtonWidget resetButton =
+                ButtonWidget.builder(
+                        Text.literal("Reset Resolution"),
+                        button ->
+                                performanceManager
+                                        .resetAdaptiveResolution()
+                ).dimensions(
+                        left + 296,
+                        top + 194,
+                        148,
+                        20
+                ).build();
+
+        addDrawableChild(resetButton);
+    }
+
+    private void toggleMobileOptimization() {
+
+        boolean enabled =
+                performanceManager
+                        .isMobileOptimizationEnabled();
+
+        performanceManager
+                .setMobileOptimizationEnabled(
+                        !enabled
+                );
+
+        updateButtonTexts();
+    }
+
+    private void toggleMobileMode() {
+
+        MobilePerformanceManager.Mode currentMode =
+                performanceManager
+                        .getMobilePerformanceManager()
+                        .getMode();
+
+        MobilePerformanceManager.Mode nextMode;
+
+        if (currentMode ==
+                MobilePerformanceManager.Mode.BALANCED) {
+
+            nextMode =
+                    MobilePerformanceManager.Mode.PERFORMANCE;
+
+        } else {
+
+            nextMode =
+                    MobilePerformanceManager.Mode.BALANCED;
+        }
+
+        performanceManager
+                .setMobilePerformanceMode(nextMode);
+
+        updateButtonTexts();
+    }
+
+    private void updateButtonTexts() {
+
+        if (mobileButton != null) {
+            mobileButton.setMessage(
+                    getMobileButtonText()
+            );
+        }
+
+        if (modeButton != null) {
+            modeButton.setMessage(
+                    getModeButtonText()
+            );
+        }
+    }
+
+    private Text getMobileButtonText() {
+
+        if (performanceManager
+                .isMobileOptimizationEnabled()) {
+
+            return Text.literal(
+                    "Mobile: ON"
+            );
+        }
+
+        return Text.literal(
+                "Mobile: OFF"
+        );
+    }
+
+    private Text getModeButtonText() {
+
+        MobilePerformanceManager.Mode mode =
+                performanceManager
+                        .getMobilePerformanceManager()
+                        .getMode();
+
+        return Text.literal(
+                "Mode: " + mode.name()
+        );
     }
 
     @Override
@@ -51,7 +195,10 @@ public final class OptimizerScreen extends Screen {
         int top =
                 (height - PANEL_HEIGHT) / 2;
 
-        // Main panel
+        /*
+         * Main panel
+         */
+
         context.fill(
                 left,
                 top,
@@ -60,7 +207,10 @@ public final class OptimizerScreen extends Screen {
                 0xE0101010
         );
 
-        // Header
+        /*
+         * Header
+         */
+
         context.fill(
                 left,
                 top,
@@ -78,10 +228,15 @@ public final class OptimizerScreen extends Screen {
                 false
         );
 
-        int statsX = left + 16;
-        int statsY = top + 48;
+        /*
+         * Statistics
+         */
 
-        // LEFT COLUMN
+        int statsX =
+                left + 16;
+
+        int statsY =
+                top + 48;
 
         drawStat(
                 context,
@@ -137,9 +292,12 @@ public final class OptimizerScreen extends Screen {
                 statsY + 96
         );
 
-        // RIGHT COLUMN
+        /*
+         * Second column
+         */
 
-        int secondColumnX = left + 235;
+        int secondColumnX =
+                left + 235;
 
         drawStat(
                 context,
@@ -195,15 +353,18 @@ public final class OptimizerScreen extends Screen {
                 statsY + 96
         );
 
-        // Mobile optimization section
+        /*
+         * Mobile section
+         */
 
-        int mobileY = top + 160;
+        int mobileY =
+                top + 160;
 
         context.fill(
                 left + 12,
                 mobileY,
                 left + PANEL_WIDTH - 12,
-                mobileY + 32,
+                mobileY + 25,
                 0xFF181818
         );
 
@@ -211,7 +372,7 @@ public final class OptimizerScreen extends Screen {
                 textRenderer,
                 "Mobile Optimization",
                 left + 20,
-                mobileY + 8,
+                mobileY + 7,
                 0xFFFFFFFF,
                 false
         );
@@ -220,33 +381,40 @@ public final class OptimizerScreen extends Screen {
                 performanceManager
                         .getMobilePerformanceManager();
 
-        String mobileStatus =
-                mobileManager.isEnabled()
-                        ? "ON"
-                        : "OFF";
-
         drawStat(
                 context,
                 "Enabled",
-                mobileStatus,
+                mobileManager.isEnabled()
+                        ? "ON"
+                        : "OFF",
                 left + 20,
-                mobileY + 42
+                mobileY + 34
         );
 
         drawStat(
                 context,
                 "Recommended",
-                mobileManager.getScaleText(),
+                mobileManager
+                        .getScaleText(),
                 left + 235,
-                mobileY + 42
+                mobileY + 34
         );
 
-        // Graph
+        /*
+         * Graph
+         */
 
-        int graphLeft = left + 16;
-        int graphTop = top + 222;
-        int graphRight = left + PANEL_WIDTH - 16;
-        int graphBottom = top + 282;
+        int graphLeft =
+                left + 16;
+
+        int graphTop =
+                top + 222;
+
+        int graphRight =
+                left + PANEL_WIDTH - 16;
+
+        int graphBottom =
+                top + 312;
 
         FrameTimeGraph.render(
                 context,
@@ -329,4 +497,4 @@ public final class OptimizerScreen extends Screen {
     public boolean shouldCloseOnEsc() {
         return true;
     }
-}
+    }
