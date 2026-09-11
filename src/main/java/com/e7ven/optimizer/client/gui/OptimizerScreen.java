@@ -2,6 +2,7 @@ package com.e7ven.optimizer.client.gui;
 
 import com.e7ven.optimizer.client.E7venOptimizerClient;
 import com.e7ven.optimizer.performance.FrameTimeMonitor;
+import com.e7ven.optimizer.performance.MobilePerformanceManager;
 import com.e7ven.optimizer.performance.PerformanceManager;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -9,8 +10,8 @@ import net.minecraft.text.Text;
 
 public final class OptimizerScreen extends Screen {
 
-    private static final int PANEL_WIDTH = 420;
-    private static final int PANEL_HEIGHT = 260;
+    private static final int PANEL_WIDTH = 460;
+    private static final int PANEL_HEIGHT = 300;
 
     private final PerformanceManager performanceManager;
     private final FrameTimeMonitor frameTimeMonitor;
@@ -50,9 +51,7 @@ public final class OptimizerScreen extends Screen {
         int top =
                 (height - PANEL_HEIGHT) / 2;
 
-        /*
-         * Основная панель.
-         */
+        // Main panel
         context.fill(
                 left,
                 top,
@@ -61,9 +60,7 @@ public final class OptimizerScreen extends Screen {
                 0xE0101010
         );
 
-        /*
-         * Верхняя часть.
-         */
+        // Header
         context.fill(
                 left,
                 top,
@@ -72,9 +69,6 @@ public final class OptimizerScreen extends Screen {
                 0xFF202020
         );
 
-        /*
-         * Заголовок.
-         */
         context.drawText(
                 textRenderer,
                 "E7ven FrameTime Optimizer",
@@ -85,7 +79,9 @@ public final class OptimizerScreen extends Screen {
         );
 
         int statsX = left + 16;
-        int statsY = top + 52;
+        int statsY = top + 48;
+
+        // LEFT COLUMN
 
         drawStat(
                 context,
@@ -105,7 +101,7 @@ public final class OptimizerScreen extends Screen {
                                 .getCurrentFrameTime()
                 ),
                 statsX,
-                statsY + 28
+                statsY + 24
         );
 
         drawStat(
@@ -116,7 +112,7 @@ public final class OptimizerScreen extends Screen {
                                 .getTargetFrameTime()
                 ),
                 statsX,
-                statsY + 56
+                statsY + 48
         );
 
         drawStat(
@@ -127,7 +123,7 @@ public final class OptimizerScreen extends Screen {
                                 .getAverageFrameTime()
                 ),
                 statsX,
-                statsY + 84
+                statsY + 72
         );
 
         drawStat(
@@ -138,10 +134,12 @@ public final class OptimizerScreen extends Screen {
                                 .getOnePercentLowFrameTime()
                 ),
                 statsX,
-                statsY + 112
+                statsY + 96
         );
 
-        int secondColumnX = left + 220;
+        // RIGHT COLUMN
+
+        int secondColumnX = left + 235;
 
         drawStat(
                 context,
@@ -163,7 +161,7 @@ public final class OptimizerScreen extends Screen {
                                 .getStabilityScore()
                 ),
                 secondColumnX,
-                statsY + 28
+                statsY + 24
         );
 
         drawStat(
@@ -176,7 +174,7 @@ public final class OptimizerScreen extends Screen {
                                 * 100.0
                 ),
                 secondColumnX,
-                statsY + 56
+                statsY + 48
         );
 
         drawStat(
@@ -185,16 +183,70 @@ public final class OptimizerScreen extends Screen {
                 performanceManager
                         .getStatusText(),
                 secondColumnX,
-                statsY + 84
+                statsY + 72
         );
 
-        /*
-         * График.
-         */
+        drawStat(
+                context,
+                "Mobile Mode",
+                performanceManager
+                        .getMobileModeText(),
+                secondColumnX,
+                statsY + 96
+        );
+
+        // Mobile optimization section
+
+        int mobileY = top + 160;
+
+        context.fill(
+                left + 12,
+                mobileY,
+                left + PANEL_WIDTH - 12,
+                mobileY + 32,
+                0xFF181818
+        );
+
+        context.drawText(
+                textRenderer,
+                "Mobile Optimization",
+                left + 20,
+                mobileY + 8,
+                0xFFFFFFFF,
+                false
+        );
+
+        MobilePerformanceManager mobileManager =
+                performanceManager
+                        .getMobilePerformanceManager();
+
+        String mobileStatus =
+                mobileManager.isEnabled()
+                        ? "ON"
+                        : "OFF";
+
+        drawStat(
+                context,
+                "Enabled",
+                mobileStatus,
+                left + 20,
+                mobileY + 42
+        );
+
+        drawStat(
+                context,
+                "Recommended",
+                mobileManager.getScaleText(),
+                left + 235,
+                mobileY + 42
+        );
+
+        // Graph
+
         int graphLeft = left + 16;
-        int graphTop = top + 184;
+        int graphTop = top + 222;
         int graphRight = left + PANEL_WIDTH - 16;
-        int graphBottom = top + 238;
+        int graphBottom = top + 282;
 
         FrameTimeGraph.render(
                 context,
@@ -216,9 +268,6 @@ public final class OptimizerScreen extends Screen {
                 false
         );
 
-        /*
-         * Значение цели.
-         */
         context.drawText(
                 textRenderer,
                 String.format(
@@ -226,7 +275,7 @@ public final class OptimizerScreen extends Screen {
                         performanceManager
                                 .getTargetFrameTime()
                 ),
-                graphRight - 85,
+                graphRight - 95,
                 graphTop + 5,
                 0xFFAAAAAA,
                 false
@@ -252,7 +301,7 @@ public final class OptimizerScreen extends Screen {
         context.drawText(
                 textRenderer,
                 value,
-                x + 100,
+                x + 105,
                 y,
                 0xFFFFFFFF,
                 false
@@ -260,6 +309,7 @@ public final class OptimizerScreen extends Screen {
     }
 
     private String formatMs(double value) {
+
         if (value <= 0.0) {
             return "-- ms";
         }
