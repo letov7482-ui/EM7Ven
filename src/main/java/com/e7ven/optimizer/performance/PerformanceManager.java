@@ -2,6 +2,7 @@ package com.e7ven.optimizer.performance;
 
 import com.e7ven.optimizer.client.RefreshRateManager;
 import com.e7ven.optimizer.mixin.GameRendererMixin;
+import net.minecraft.client.MinecraftClient;
 
 public final class PerformanceManager {
 
@@ -15,6 +16,7 @@ public final class PerformanceManager {
     private final StutterController stutterController;
     private final RefreshRateProfileManager refreshRateProfileManager;
     private final MobilePerformanceManager mobilePerformanceManager;
+    private final RenderResolutionController renderResolutionController;
 
     private PerformanceManager() {
 
@@ -41,6 +43,9 @@ public final class PerformanceManager {
 
         mobilePerformanceManager =
                 new MobilePerformanceManager();
+
+        renderResolutionController =
+                new RenderResolutionController();
     }
 
     public static PerformanceManager getInstance() {
@@ -60,24 +65,77 @@ public final class PerformanceManager {
         double targetFrameTime =
                 optimizerController.getTargetFrameTime();
 
-        double currentScale =
-                adaptiveResolutionManager
-                        .getResolutionScale();
+        /*
+         * Detect frame-time spikes.
+         */
 
         stutterController.update(
                 currentFrameTime,
                 averageFrameTime
         );
 
+        /*
+         * Adaptive resolution.
+         */
+
         adaptiveResolutionManager.update(
                 currentFrameTime,
                 targetFrameTime
         );
 
+        /*
+         * Mobile optimization.
+         */
+
+        double currentScale =
+                adaptiveResolutionManager
+                        .getResolutionScale();
+
         mobilePerformanceManager.update(
                 currentFrameTime,
                 targetFrameTime,
                 currentScale
+        );
+
+        /*
+         * Choose the strongest recommendation.
+         *
+         * Mobile optimization can request a
+         * lower scale than the normal adaptive
+         * system.
+         */
+
+        double recommendedScale =
+                currentScale;
+
+        if (
+                mobilePerformanceManager
+                        .isEnabled()
+        ) {
+
+            recommendedScale =
+                    Math.min(
+                            currentScale,
+                            mobilePerformanceManager
+                                    .getRecommendedScale()
+                    );
+        }
+
+        /*
+         * Calculate the render resolution.
+         *
+         * This does not resize Minecraft's
+         * framebuffer yet. It safely prepares
+         * the resolution that the renderer can
+         * use later.
+         */
+
+        MinecraftClient client =
+                MinecraftClient.getInstance();
+
+        renderResolutionController.update(
+                client,
+                recommendedScale
         );
     }
 
@@ -109,16 +167,23 @@ public final class PerformanceManager {
         return mobilePerformanceManager;
     }
 
+    public RenderResolutionController getRenderResolutionController() {
+        return renderResolutionController;
+    }
+
     public double getCurrentFrameTime() {
-        return frameTimeMonitor.getCurrentFrameTime();
+        return frameTimeMonitor
+                .getCurrentFrameTime();
     }
 
     public double getAverageFrameTime() {
-        return frameTimeMonitor.getAverageFrameTime();
+        return frameTimeMonitor
+                .getAverageFrameTime();
     }
 
     public double getWorstFrameTime() {
-        return frameTimeMonitor.getWorstFrameTime();
+        return frameTimeMonitor
+                .getWorstFrameTime();
     }
 
     public double getOnePercentLowFrameTime() {
@@ -139,6 +204,26 @@ public final class PerformanceManager {
     public double getResolutionScale() {
         return adaptiveResolutionManager
                 .getResolutionScale();
+    }
+
+    public double getRenderResolutionScale() {
+        return renderResolutionController
+                .getScale();
+    }
+
+    public int getRenderWidth() {
+        return renderResolutionController
+                .getRenderWidth();
+    }
+
+    public int getRenderHeight() {
+        return renderResolutionController
+                .getRenderHeight();
+    }
+
+    public String getRenderResolutionText() {
+        return renderResolutionController
+                .getResolutionText();
     }
 
     public double getMobileRecommendedScale() {
@@ -176,7 +261,9 @@ public final class PerformanceManager {
     ) {
 
         optimizerController
-                .setOptimizationEnabled(enabled);
+                .setOptimizationEnabled(
+                        enabled
+                );
 
         adaptiveResolutionManager
                 .setEnabled(enabled);
@@ -185,8 +272,15 @@ public final class PerformanceManager {
                 .setEnabled(enabled);
 
         if (!enabled) {
-            adaptiveResolutionManager.reset();
-            mobilePerformanceManager.reset();
+
+            adaptiveResolutionManager
+                    .reset();
+
+            mobilePerformanceManager
+                    .reset();
+
+            renderResolutionController
+                    .reset();
         }
     }
 
@@ -198,7 +292,8 @@ public final class PerformanceManager {
                 .setEnabled(enabled);
 
         if (!enabled) {
-            mobilePerformanceManager.reset();
+            mobilePerformanceManager
+                    .reset();
         }
     }
 
@@ -212,7 +307,13 @@ public final class PerformanceManager {
 
     public void resetAdaptiveResolution() {
 
-        adaptiveResolutionManager.reset();
-        mobilePerformanceManager.reset();
+        adaptiveResolutionManager
+                .reset();
+
+        mobilePerformanceManager
+                .reset();
+
+        renderResolutionController
+                .reset();
     }
-}
+                        }
