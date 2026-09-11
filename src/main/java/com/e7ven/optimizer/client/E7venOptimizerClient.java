@@ -1,8 +1,6 @@
 package com.e7ven.optimizer.client;
 
-import com.e7ven.optimizer.performance.FrameTimeMonitor;
-import com.e7ven.optimizer.performance.OptimizerController;
-import com.e7ven.optimizer.mixin.GameRendererMixin;
+import com.e7ven.optimizer.performance.PerformanceManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 
@@ -11,14 +9,8 @@ public final class E7venOptimizerClient implements ClientModInitializer {
     private static final RefreshRateManager REFRESH_RATE_MANAGER =
             RefreshRateManager.getInstance();
 
-    private static final FrameTimeMonitor FRAME_TIME_MONITOR =
-            GameRendererMixin.e7ven$getFrameTimeMonitor();
-
-    private static final OptimizerController OPTIMIZER =
-            new OptimizerController(
-                    REFRESH_RATE_MANAGER,
-                    FRAME_TIME_MONITOR
-            );
+    private static final PerformanceManager PERFORMANCE_MANAGER =
+            PerformanceManager.getInstance();
 
     private static int refreshUpdateTimer = 0;
 
@@ -29,13 +21,11 @@ public final class E7venOptimizerClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
 
-            /*
-             * Обновляем частоту экрана примерно раз в секунду.
-             * Это нужно, чтобы изменение окна/монитора
-             * автоматически подхватывалось оптимизатором.
-             */
             refreshUpdateTimer++;
 
+            /*
+             * Обновляем данные монитора примерно раз в секунду.
+             */
             if (refreshUpdateTimer >= 20) {
                 refreshUpdateTimer = 0;
 
@@ -43,9 +33,9 @@ public final class E7venOptimizerClient implements ClientModInitializer {
             }
 
             /*
-             * Обновляем состояние оптимизатора.
+             * Обновляем всю систему оптимизации.
              */
-            OPTIMIZER.update();
+            PERFORMANCE_MANAGER.update();
         });
 
         System.out.println(
@@ -63,11 +53,7 @@ public final class E7venOptimizerClient implements ClientModInitializer {
         return REFRESH_RATE_MANAGER;
     }
 
-    public static FrameTimeMonitor getFrameTimeMonitor() {
-        return FRAME_TIME_MONITOR;
-    }
-
-    public static OptimizerController getOptimizer() {
-        return OPTIMIZER;
+    public static PerformanceManager getPerformanceManager() {
+        return PERFORMANCE_MANAGER;
     }
 }
