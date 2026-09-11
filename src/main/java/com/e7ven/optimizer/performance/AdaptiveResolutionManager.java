@@ -16,22 +16,31 @@ public final class AdaptiveResolutionManager {
 
     private static final int RECOVERY_DELAY = 3;
 
-    private double resolutionScale = DEFAULT_SCALE;
+    private double resolutionScale =
+            DEFAULT_SCALE;
+
+    private double previousScale =
+            DEFAULT_SCALE;
 
     private boolean enabled = true;
 
     private int decisionTimer = 0;
     private int recoveryCounter = 0;
 
+    private boolean scaleChanged = false;
+
     public void update(
             double currentFrameTime,
             double targetFrameTime
     ) {
+        scaleChanged = false;
+
         if (!enabled) {
             return;
         }
 
-        if (currentFrameTime <= 0.0 || targetFrameTime <= 0.0) {
+        if (currentFrameTime <= 0.0
+                || targetFrameTime <= 0.0) {
             return;
         }
 
@@ -44,12 +53,9 @@ public final class AdaptiveResolutionManager {
         decisionTimer = 0;
 
         double ratio =
-                currentFrameTime / targetFrameTime;
+                currentFrameTime
+                        / targetFrameTime;
 
-        /*
-         * Производительность плохая:
-         * быстрее реагируем снижением качества.
-         */
         if (ratio > REDUCE_THRESHOLD) {
 
             recoveryCounter = 0;
@@ -59,17 +65,12 @@ public final class AdaptiveResolutionManager {
             return;
         }
 
-        /*
-         * Производительность хорошая.
-         *
-         * Не повышаем качество сразу после одного
-         * удачного измерения — ждём несколько циклов.
-         */
         if (ratio < INCREASE_THRESHOLD) {
 
             recoveryCounter++;
 
             if (recoveryCounter >= RECOVERY_DELAY) {
+
                 recoveryCounter = 0;
 
                 increaseScale();
@@ -78,56 +79,118 @@ public final class AdaptiveResolutionManager {
             return;
         }
 
-        /*
-         * Мы находимся в нормальной зоне.
-         */
         recoveryCounter = 0;
     }
 
     private void decreaseScale() {
 
-        resolutionScale -= SCALE_STEP;
+        double newScale =
+                resolutionScale
+                        - SCALE_STEP;
 
-        if (resolutionScale < MIN_SCALE) {
-            resolutionScale = MIN_SCALE;
-        }
+        newScale =
+                Math.max(
+                        MIN_SCALE,
+                        newScale
+                );
+
+        setScale(newScale);
     }
 
     private void increaseScale() {
 
-        resolutionScale += SCALE_STEP;
+        double newScale =
+                resolutionScale
+                        + SCALE_STEP;
 
-        if (resolutionScale > MAX_SCALE) {
-            resolutionScale = MAX_SCALE;
+        newScale =
+                Math.min(
+                        MAX_SCALE,
+                        newScale
+                );
+
+        setScale(newScale);
+    }
+
+    private void setScale(
+            double newScale
+    ) {
+        newScale =
+                Math.max(
+                        MIN_SCALE,
+                        Math.min(
+                                MAX_SCALE,
+                                newScale
+                        )
+                );
+
+        if (
+                Math.abs(
+                        newScale
+                                - resolutionScale
+                ) < 0.001
+        ) {
+            return;
         }
+
+        previousScale =
+                resolutionScale;
+
+        resolutionScale =
+                newScale;
+
+        scaleChanged = true;
     }
 
     public double getResolutionScale() {
         return resolutionScale;
     }
 
+    public double getPreviousScale() {
+        return previousScale;
+    }
+
+    public boolean hasScaleChanged() {
+        return scaleChanged;
+    }
+
     public boolean isEnabled() {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(
+            boolean enabled
+    ) {
+
         this.enabled = enabled;
+
+        if (!enabled) {
+            reset();
+        }
     }
 
     public void reset() {
 
-        resolutionScale = DEFAULT_SCALE;
+        previousScale =
+                resolutionScale;
+
+        resolutionScale =
+                DEFAULT_SCALE;
 
         decisionTimer = 0;
         recoveryCounter = 0;
+
+        scaleChanged = true;
     }
 
     public boolean isAtMinimum() {
-        return resolutionScale <= MIN_SCALE;
+        return resolutionScale
+                <= MIN_SCALE;
     }
 
     public boolean isAtMaximum() {
-        return resolutionScale >= MAX_SCALE;
+        return resolutionScale
+                >= MAX_SCALE;
     }
 
     public String getScaleText() {
@@ -135,6 +198,14 @@ public final class AdaptiveResolutionManager {
         return String.format(
                 "%.0f%%",
                 resolutionScale * 100.0
+        );
+    }
+
+    public String getPreviousScaleText() {
+
+        return String.format(
+                "%.0f%%",
+                previousScale * 100.0
         );
     }
 }
