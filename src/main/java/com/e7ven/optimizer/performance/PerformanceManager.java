@@ -12,9 +12,12 @@ public final class PerformanceManager {
     private final FrameTimeMonitor frameTimeMonitor;
     private final OptimizerController optimizerController;
     private final AdaptiveResolutionManager adaptiveResolutionManager;
+    private final StutterController stutterController;
 
     private PerformanceManager() {
-        refreshRateManager = RefreshRateManager.getInstance();
+
+        refreshRateManager =
+                RefreshRateManager.getInstance();
 
         frameTimeMonitor =
                 GameRendererMixin.e7ven$getFrameTimeMonitor();
@@ -27,21 +30,37 @@ public final class PerformanceManager {
 
         adaptiveResolutionManager =
                 new AdaptiveResolutionManager();
+
+        stutterController =
+                new StutterController();
     }
 
     public static PerformanceManager getInstance() {
         return INSTANCE;
     }
 
-    /**
-     * Основное обновление системы оптимизации.
-     */
     public void update() {
 
         optimizerController.update();
 
+        double currentFrameTime =
+                frameTimeMonitor.getCurrentFrameTime();
+
+        double averageFrameTime =
+                frameTimeMonitor.getAverageFrameTime();
+
+        stutterController.update(
+                currentFrameTime,
+                averageFrameTime
+        );
+
+        /*
+         * При серьёзном Frame Time spike
+         * Adaptive Resolution получает возможность
+         * быстрее реагировать.
+         */
         adaptiveResolutionManager.update(
-                frameTimeMonitor.getCurrentFrameTime(),
+                currentFrameTime,
                 optimizerController.getTargetFrameTime()
         );
     }
@@ -62,6 +81,10 @@ public final class PerformanceManager {
         return adaptiveResolutionManager;
     }
 
+    public StutterController getStutterController() {
+        return stutterController;
+    }
+
     public double getCurrentFrameTime() {
         return frameTimeMonitor.getCurrentFrameTime();
     }
@@ -75,31 +98,44 @@ public final class PerformanceManager {
     }
 
     public double getOnePercentLowFrameTime() {
-        return frameTimeMonitor.getOnePercentLowFrameTime();
+        return frameTimeMonitor
+                .getOnePercentLowFrameTime();
     }
 
     public double getTargetFrameTime() {
-        return optimizerController.getTargetFrameTime();
+        return optimizerController
+                .getTargetFrameTime();
     }
 
     public double getStabilityScore() {
-        return optimizerController.getStabilityScore();
+        return optimizerController
+                .getStabilityScore();
     }
 
     public double getResolutionScale() {
-        return adaptiveResolutionManager.getResolutionScale();
+        return adaptiveResolutionManager
+                .getResolutionScale();
     }
 
     public String getStatusText() {
-        return optimizerController.getStatusText();
+        return optimizerController
+                .getStatusText();
     }
 
     public boolean isOptimizationEnabled() {
-        return optimizerController.isOptimizationEnabled();
+        return optimizerController
+                .isOptimizationEnabled();
     }
 
-    public void setOptimizationEnabled(boolean enabled) {
-        optimizerController.setOptimizationEnabled(enabled);
+    public void setOptimizationEnabled(
+            boolean enabled
+    ) {
+
+        optimizerController
+                .setOptimizationEnabled(enabled);
+
+        adaptiveResolutionManager
+                .setEnabled(enabled);
 
         if (!enabled) {
             adaptiveResolutionManager.reset();
@@ -107,6 +143,7 @@ public final class PerformanceManager {
     }
 
     public void resetAdaptiveResolution() {
+
         adaptiveResolutionManager.reset();
     }
 }
