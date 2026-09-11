@@ -7,9 +7,15 @@
   "authors": [
     "E7ven"
   ],
+  "contact": {
+    "homepage": "",
+    "sources": "",
+    "issues": ""
+  },
   "license": "MIT",
   "icon": "assets/e7venoptimizer/icon.png",
   "environment": "client",
+
   "entrypoints": {
     "main": [
       "com.e7ven.optimizer.E7venOptimizer"
@@ -18,6 +24,14 @@
       "com.e7ven.optimizer.client.E7venOptimizerClient"
     ]
   },
+
+  "mixins": [
+    {
+      "config": "e7venoptimizer.mixins.json",
+      "environment": "client"
+    }
+  ],
+
   "depends": {
     "fabricloader": ">=0.18.2",
     "minecraft": "~1.21.11",
