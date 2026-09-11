@@ -1,6 +1,7 @@
 package com.e7ven.optimizer.client.gui;
 
 import com.e7ven.optimizer.client.E7venOptimizerClient;
+import com.e7ven.optimizer.performance.FrameTimeMonitor;
 import com.e7ven.optimizer.performance.PerformanceManager;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -12,12 +13,16 @@ public final class OptimizerScreen extends Screen {
     private static final int PANEL_HEIGHT = 260;
 
     private final PerformanceManager performanceManager;
+    private final FrameTimeMonitor frameTimeMonitor;
 
     public OptimizerScreen() {
         super(Text.literal("E7ven FrameTime Optimizer"));
 
         performanceManager =
                 E7venOptimizerClient.getPerformanceManager();
+
+        frameTimeMonitor =
+                performanceManager.getFrameTimeMonitor();
     }
 
     @Override
@@ -32,10 +37,18 @@ public final class OptimizerScreen extends Screen {
             int mouseY,
             float delta
     ) {
-        super.render(context, mouseX, mouseY, delta);
+        super.render(
+                context,
+                mouseX,
+                mouseY,
+                delta
+        );
 
-        int left = (width - PANEL_WIDTH) / 2;
-        int top = (height - PANEL_HEIGHT) / 2;
+        int left =
+                (width - PANEL_WIDTH) / 2;
+
+        int top =
+                (height - PANEL_HEIGHT) / 2;
 
         /*
          * Основная панель.
@@ -49,7 +62,7 @@ public final class OptimizerScreen extends Screen {
         );
 
         /*
-         * Верхняя полоса.
+         * Верхняя часть.
          */
         context.fill(
                 left,
@@ -71,9 +84,6 @@ public final class OptimizerScreen extends Screen {
                 false
         );
 
-        /*
-         * Основная статистика.
-         */
         int statsX = left + 16;
         int statsY = top + 52;
 
@@ -91,7 +101,8 @@ public final class OptimizerScreen extends Screen {
                 context,
                 "Frame Time",
                 formatMs(
-                        performanceManager.getCurrentFrameTime()
+                        performanceManager
+                                .getCurrentFrameTime()
                 ),
                 statsX,
                 statsY + 28
@@ -101,7 +112,8 @@ public final class OptimizerScreen extends Screen {
                 context,
                 "Target",
                 formatMs(
-                        performanceManager.getTargetFrameTime()
+                        performanceManager
+                                .getTargetFrameTime()
                 ),
                 statsX,
                 statsY + 56
@@ -111,7 +123,8 @@ public final class OptimizerScreen extends Screen {
                 context,
                 "Average",
                 formatMs(
-                        performanceManager.getAverageFrameTime()
+                        performanceManager
+                                .getAverageFrameTime()
                 ),
                 statsX,
                 statsY + 84
@@ -128,13 +141,16 @@ public final class OptimizerScreen extends Screen {
                 statsY + 112
         );
 
+        int secondColumnX = left + 220;
+
         drawStat(
                 context,
                 "Worst",
                 formatMs(
-                        performanceManager.getWorstFrameTime()
+                        performanceManager
+                                .getWorstFrameTime()
                 ),
-                left + 220,
+                secondColumnX,
                 statsY
         );
 
@@ -143,9 +159,10 @@ public final class OptimizerScreen extends Screen {
                 "Stability",
                 String.format(
                         "%.0f%%",
-                        performanceManager.getStabilityScore()
+                        performanceManager
+                                .getStabilityScore()
                 ),
-                left + 220,
+                secondColumnX,
                 statsY + 28
         );
 
@@ -155,39 +172,44 @@ public final class OptimizerScreen extends Screen {
                 String.format(
                         "%.0f%%",
                         performanceManager
-                                .getResolutionScale() * 100.0
+                                .getResolutionScale()
+                                * 100.0
                 ),
-                left + 220,
+                secondColumnX,
                 statsY + 56
         );
 
         drawStat(
                 context,
                 "Status",
-                performanceManager.getStatusText(),
-                left + 220,
+                performanceManager
+                        .getStatusText(),
+                secondColumnX,
                 statsY + 84
         );
 
         /*
-         * Область будущего графика.
+         * График.
          */
         int graphLeft = left + 16;
         int graphTop = top + 184;
         int graphRight = left + PANEL_WIDTH - 16;
         int graphBottom = top + 238;
 
-        context.fill(
+        FrameTimeGraph.render(
+                context,
+                frameTimeMonitor,
                 graphLeft,
                 graphTop,
                 graphRight,
                 graphBottom,
-                0xFF080808
+                performanceManager
+                        .getTargetFrameTime()
         );
 
         context.drawText(
                 textRenderer,
-                "Frame Time Graph",
+                "Frame Time",
                 graphLeft + 6,
                 graphTop + 5,
                 0xFFAAAAAA,
@@ -195,14 +217,18 @@ public final class OptimizerScreen extends Screen {
         );
 
         /*
-         * Сам график подключим следующим файлом.
+         * Значение цели.
          */
         context.drawText(
                 textRenderer,
-                "Collecting data...",
-                graphLeft + 6,
-                graphTop + 25,
-                0xFF777777,
+                String.format(
+                        "Target %.2f ms",
+                        performanceManager
+                                .getTargetFrameTime()
+                ),
+                graphRight - 85,
+                graphTop + 5,
+                0xFFAAAAAA,
                 false
         );
     }
@@ -253,4 +279,4 @@ public final class OptimizerScreen extends Screen {
     public boolean shouldCloseOnEsc() {
         return true;
     }
-          }
+}
