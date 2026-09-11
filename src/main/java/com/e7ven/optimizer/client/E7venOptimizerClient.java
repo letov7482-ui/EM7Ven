@@ -1,8 +1,10 @@
 package com.e7ven.optimizer.client;
 
+import com.e7ven.optimizer.client.gui.OptimizerScreen;
 import com.e7ven.optimizer.performance.PerformanceManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.client.MinecraftClient;
 
 public final class E7venOptimizerClient implements ClientModInitializer {
 
@@ -17,15 +19,27 @@ public final class E7venOptimizerClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
 
-        System.out.println("[E7ven Optimizer] Client initialized.");
+        System.out.println(
+                "[E7ven Optimizer] Client initialized."
+        );
+
+        /*
+         * Регистрируем клавишу F8.
+         */
+        OptimizerKeybind.register();
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
 
-            refreshUpdateTimer++;
+            /*
+             * Обработка клавиши.
+             */
+            OptimizerKeybind.handleInput();
 
             /*
-             * Обновляем данные монитора примерно раз в секунду.
+             * Обновляем частоту экрана примерно раз в секунду.
              */
+            refreshUpdateTimer++;
+
             if (refreshUpdateTimer >= 20) {
                 refreshUpdateTimer = 0;
 
@@ -33,19 +47,42 @@ public final class E7venOptimizerClient implements ClientModInitializer {
             }
 
             /*
-             * Обновляем всю систему оптимизации.
+             * Обновляем систему оптимизации.
              */
             PERFORMANCE_MANAGER.update();
         });
 
         System.out.println(
                 "[E7ven Optimizer] Display: "
-                        + REFRESH_RATE_MANAGER.getRefreshRateText()
+                        + REFRESH_RATE_MANAGER
+                        .getRefreshRateText()
         );
 
         System.out.println(
                 "[E7ven Optimizer] Target Frame Time: "
-                        + REFRESH_RATE_MANAGER.getTargetFrameTimeText()
+                        + REFRESH_RATE_MANAGER
+                        .getTargetFrameTimeText()
+        );
+    }
+
+    public static void openOptimizerScreen() {
+
+        MinecraftClient client =
+                MinecraftClient.getInstance();
+
+        if (client == null) {
+            return;
+        }
+
+        /*
+         * Не открываем экран поверх другого GUI.
+         */
+        if (client.currentScreen != null) {
+            return;
+        }
+
+        client.setScreen(
+                new OptimizerScreen()
         );
     }
 
