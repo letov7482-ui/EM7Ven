@@ -238,6 +238,8 @@ public final class OptimizerScreen extends Screen {
         int statsY =
                 top + 48;
 
+        // LEFT COLUMN
+
         drawStat(
                 context,
                 "Refresh Rate",
@@ -292,9 +294,7 @@ public final class OptimizerScreen extends Screen {
                 statsY + 96
         );
 
-        /*
-         * Second column
-         */
+        // RIGHT COLUMN
 
         int secondColumnX =
                 left + 235;
@@ -351,6 +351,15 @@ public final class OptimizerScreen extends Screen {
                         .getMobileModeText(),
                 secondColumnX,
                 statsY + 96
+        );
+
+        drawStat(
+                context,
+                "Render Size",
+                performanceManager
+                        .getRenderResolutionText(),
+                secondColumnX,
+                statsY + 120
         );
 
         /*
@@ -497,4 +506,4 @@ public final class OptimizerScreen extends Screen {
     public boolean shouldCloseOnEsc() {
         return true;
     }
-    }
+            }
